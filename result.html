@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result — FetalAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0d1117;
+            --surface: #f8f6f2;
+            --card: #ffffff;
+            --accent: #1a6b5a;
+            --accent-light: #e6f4f1;
+            --muted: #6b7280;
+            --border: #e2ddd8;
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.06);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--surface);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px; right: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(26,107,90,0.07) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .result-card {
+            position: relative;
+            z-index: 1;
+            background: var(--card);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 520px;
+            overflow: hidden;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* Colored top bar driven by result class */
+        .result-banner {
+            padding: 36px 40px 32px;
+            text-align: center;
+            position: relative;
+        }
+
+        .result-banner.normal { background: linear-gradient(135deg, #e6f4f1 0%, #d0ece7 100%); }
+        .result-banner.suspect { background: linear-gradient(135deg, #fef9ec 0%, #fdefd0 100%); }
+        .result-banner.pathological { background: linear-gradient(135deg, #fdf0ea 0%, #fce0d0 100%); }
+
+        .result-icon {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex; align-items: center; justify-content: center;
+            animation: pop 0.4s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        .result-icon.normal { background: #1a6b5a; }
+        .result-icon.suspect { background: #c9882f; }
+        .result-icon.pathological { background: #c9622f; }
+
+        .result-icon svg {
+            width: 34px; height: 34px;
+            stroke: #fff;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        .result-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 100px;
+            margin-bottom: 10px;
+        }
+
+        .result-badge.normal { background: rgba(26,107,90,0.12); color: #1a6b5a; }
+        .result-badge.suspect { background: rgba(201,136,47,0.15); color: #8a5f1a; }
+        .result-badge.pathological { background: rgba(201,98,47,0.15); color: #8a3a1a; }
+
+        .result-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 32px;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .result-title.normal { color: #1a6b5a; }
+        .result-title.suspect { color: #8a5f1a; }
+        .result-title.pathological { color: #8a3a1a; }
+
+        .result-code {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        /* Lower body */
+        .result-body {
+            padding: 28px 40px 36px;
+        }
+
+        .message-block {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border);
+        }
+
+        .message-label {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.65;
+            color: #374151;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-back {
+            flex: 1;
+            padding: 13px;
+            border: 1.5px solid var(--border);
+            background: var(--card);
+            border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--ink);
+            cursor: pointer;
+            text-decoration: none;
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .btn-back:hover {
+            border-color: #b0aaa2;
+            background: var(--surface);
+        }
+
+        .btn-back svg {
+            width: 16px; height: 16px;
+            stroke: var(--muted);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 20px;
+            opacity: 0.7;
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.92) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes pop {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            .result-banner, .result-body { padding-left: 24px; padding-right: 24px; }
+            .result-title { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        Use the `result` template variable to drive the CSS class:
+        "Normal" → class="normal"
+        "Suspect" → class="suspect"  
+        "Pathological" → class="pathological"
+        
+        Below is a static demo styled as "Pathological" for preview.
+        Replace the hardcoded classes with your template engine output.
+    -->
+
+    <div class="result-card">
+        <div class="result-banner {{ result_class }}">
+            <div class="result-icon {{ result_class }}">
+                <!-- Normal: checkmark  |  Suspect: alert  |  Pathological: x-circle -->
+                {% if result == 'Normal' %}
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                {% elif result == 'Suspect' %}
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                {% endif %}
+            </div>
+            <div class="result-badge {{ result_class }}">Fetal Health Status</div>
+            <div class="result-title {{ result_class }}">{{ result }}</div>
+            <div class="result-code">Classification code: {{ prediction }}</div>
+        </div>
+
+        <div class="result-body">
+            <div class="message-block">
+                <div class="message-label">Clinical Note</div>
+                <div class="message-text">{{ message }}</div>
+            </div>
+
+            <div class="actions">
+                <a href="/" class="btn-back">
+                    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    New Prediction
+                </a>
+            </div>
+
+            <p class="footer-note">For clinical use by qualified medical professionals only.</p>
+        </div>
+    </div>
+
+</body>
+</html>
